@@ -1,4 +1,7 @@
-# Pictune
+<div align="center">
+  <img src="src-tauri/icons/128x128@2x.png" width="96" alt="Pictune" />
+  <h1>Pictune</h1>
+</div>
 
 **Turn your cover art and audio into a YouTube-ready video — free, offline, no watermark.**
 
