@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Claude Code local config
+.claude/
+
 # ffmpeg binaries — downloaded by CI, not committed
 src-tauri/bin/ffmpeg*
 src-tauri/bin/ffprobe*

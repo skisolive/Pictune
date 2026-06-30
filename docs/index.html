@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pictune — Free YouTube Video Maker</title>
+  <meta name="description" content="Turn your cover art and audio into a YouTube-ready video. 100% offline, no watermark, no subscription. Free forever." />
+  <link rel="icon" href="../src-tauri/icons/32x32.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black: #050505;
+      --surface: #0d0d0f;
+      --surface-2: #131316;
+      --border: rgba(255,255,255,0.07);
+      --border-bright: rgba(255,255,255,0.12);
+      --text: #f0f0f2;
+      --muted: #6b6b78;
+      --subtle: #2a2a32;
+      --accent: #a78bfa;
+      --accent-dim: rgba(167,139,250,0.12);
+      --green: #34d399;
+      --red: #f87171;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--text);
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Noise overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      background-size: 128px;
+    }
+
+    /* ── Radial glow ── */
+    .glow-orb {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      filter: blur(120px);
+      z-index: 0;
+    }
+    .glow-orb-1 {
+      width: 600px; height: 600px;
+      top: -200px; left: -100px;
+      background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+    }
+    .glow-orb-2 {
+      width: 500px; height: 500px;
+      top: 40%; right: -150px;
+      background: radial-gradient(circle, rgba(52,211,153,0.08) 0%, transparent 70%);
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      width: calc(100% - 48px);
+      max-width: 860px;
+    }
+
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 10px 10px 20px;
+      background: rgba(13,13,15,0.7);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--border-bright);
+      border-radius: 9999px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.03), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+
+    .nav-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-logo-dot {
+      width: 8px; height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .nav-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--text);
+      color: var(--black);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 13px;
+      border-radius: 9999px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 700ms cubic-bezier(0.32,0.72,0,1);
+    }
+
+    .nav-cta:hover { background: #fff; transform: scale(1.02); }
+    .nav-cta:active { transform: scale(0.97); }
+
+    /* ── Hero ── */
+    .hero {
+      position: relative;
+      z-index: 1;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 140px 24px 80px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: var(--accent-dim);
+      border: 1px solid rgba(167,139,250,0.2);
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--accent);
+      margin-bottom: 28px;
+      opacity: 0;
+      transform: translateY(16px);
+      animation: fadeUp 800ms 100ms cubic-bezier(0.32,0.72,0,1) forwards;
+    }
+
+    .eyebrow-dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 6px var(--accent); }
+
+    h1 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(42px, 7vw, 88px);
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      max-width: 800px;
+      margin-bottom: 24px;
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 900ms 200ms cubic-bezier(0.32,0.72,0,1) forwards;
+    }
+
+    h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, #a78bfa 0%, #34d399 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: clamp(15px, 2vw, 18px);
+      color: var(--muted);
+      max-width: 480px;
+      font-weight: 300;
+      line-height: 1.7;
+      margin-bottom: 40px;
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 900ms 300ms cubic-bezier(0.32,0.72,0,1) forwards;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 900ms 400ms cubic-bezier(0.32,0.72,0,1) forwards;
+    }
+
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px 14px 24px;
+      background: var(--text);
+      color: var(--black);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 14px;
+      border-radius: 9999px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 700ms cubic-bezier(0.32,0.72,0,1);
+    }
+
+    .btn-primary:hover { background: #fff; transform: scale(1.02); box-shadow: 0 0 40px rgba(255,255,255,0.12); }
+    .btn-primary:active { transform: scale(0.97); }
+
+    .btn-icon {
+      width: 28px; height: 28px;
+      background: rgba(0,0,0,0.1);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 700ms cubic-bezier(0.32,0.72,0,1);
+      font-size: 13px;
+    }
+
+    .btn-primary:hover .btn-icon { transform: translate(2px, -1px) scale(1.1); }
+
+    .btn-ghost {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 24px;
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 400;
+      font-size: 14px;
+      border-radius: 9999px;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: all 700ms cubic-bezier(0.32,0.72,0,1);
+    }
+
+    .btn-ghost:hover { color: var(--text); border-color: var(--border-bright); background: rgba(255,255,255,0.03); }
+
+    /* ── App mockup ── */
+    .mockup-wrap {
+      position: relative;
+      margin-top: 72px;
+      width: 100%;
+      max-width: 400px;
+      opacity: 0;
+      transform: translateY(32px);
+      animation: fadeUp 1000ms 500ms cubic-bezier(0.32,0.72,0,1) forwards;
+    }
+
+    .mockup-outer {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border-bright);
+      border-radius: 28px;
+      padding: 6px;
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 40px 80px rgba(0,0,0,0.6);
+    }
+
+    .mockup-inner {
+      background: var(--surface);
+      border-radius: 23px;
+      padding: 20px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+      overflow: hidden;
+    }
+
+    .mockup-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .mockup-brand {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--text);
+      display: flex; align-items: center; gap: 6px;
+    }
+
+    .mockup-brand-dot { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 6px var(--accent); }
+
+    .mockup-section {
+      background: var(--surface-2);
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+
+    .mockup-label {
+      font-size: 9px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .mockup-image-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .mockup-thumb {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, #4c1d95, #1d4ed8);
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .mockup-filename {
+      font-size: 10px;
+      color: var(--muted);
+      font-family: 'DM Sans', monospace;
+    }
+
+    .mockup-audio-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .mockup-audio-row:last-child { border-bottom: none; }
+
+    .mockup-audio-name {
+      font-size: 11px;
+      color: rgba(240,240,242,0.7);
+    }
+
+    .mockup-duration {
+      font-size: 10px;
+      color: var(--muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mockup-bar-wrap { margin: 12px 0 8px; }
+
+    .mockup-bar-top {
+      display: flex;
+      justify-content: space-between;
+      font-size: 9px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .mockup-bar {
+      height: 2px;
+      background: var(--subtle);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .mockup-bar-fill {
+      height: 100%;
+      width: 72%;
+      background: var(--text);
+      border-radius: 99px;
+      animation: barPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes barPulse {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+
+    .mockup-render-btn {
+      width: 100%;
+      padding: 8px;
+      background: rgba(240,240,242,0.08);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 11px;
+      font-family: 'DM Sans', sans-serif;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    /* ── Section shared ── */
+    section {
+      position: relative;
+      z-index: 1;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    .section-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: clamp(32px, 5vw, 56px);
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .section-sub {
+      font-size: 16px;
+      color: var(--muted);
+      font-weight: 300;
+      max-width: 440px;
+      line-height: 1.7;
+    }
+
+    /* ── Comparison ── */
+    .comparison {
+      padding: 120px 0;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 56px;
+    }
+
+    .comp-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 900ms cubic-bezier(0.32,0.72,0,1);
+    }
+
+    .comp-card.visible { opacity: 1; transform: translateY(0); }
+
+    .comp-card-inner {
+      border-radius: 15px;
+      padding: 28px;
+      height: 100%;
+    }
+
+    .comp-card.theirs .comp-card-inner { background: rgba(248,113,113,0.05); }
+    .comp-card.ours .comp-card-inner { background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.1); }
+
+    .comp-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 20px;
+    }
+
+    .comp-card.theirs .comp-label { color: var(--red); }
+    .comp-card.ours .comp-label { color: var(--green); }
+
+    .comp-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      color: var(--text);
+      margin-bottom: 24px;
+    }
+
+    .comp-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 13px;
+    }
+
+    .comp-row:last-child { border-bottom: none; }
+
+    .comp-icon { flex-shrink: 0; margin-top: 1px; font-size: 13px; }
+    .comp-card.theirs .comp-icon { color: var(--red); }
+    .comp-card.ours .comp-icon { color: var(--green); }
+
+    .comp-text { color: rgba(240,240,242,0.7); line-height: 1.5; }
+    .comp-text strong { color: var(--text); font-weight: 500; }
+
+    /* ── Bento ── */
+    .features {
+      padding: 0 0 120px;
+    }
+
+    .bento {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-auto-rows: 160px;
+      gap: 10px;
+      margin-top: 56px;
+    }
+
+    .bento-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 900ms cubic-bezier(0.32,0.72,0,1);
+      overflow: hidden;
+    }
+
+    .bento-card.visible { opacity: 1; transform: translateY(0); }
+
+    .bento-card-inner {
+      background: var(--surface-2);
+      border-radius: 15px;
+      padding: 24px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .bento-card:nth-child(1) { grid-column: span 5; grid-row: span 2; }
+    .bento-card:nth-child(2) { grid-column: span 7; }
+    .bento-card:nth-child(3) { grid-column: span 4; }
+    .bento-card:nth-child(4) { grid-column: span 3; }
+    .bento-card:nth-child(5) { grid-column: span 5; }
+    .bento-card:nth-child(6) { grid-column: span 7; }
+
+    .bento-card-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 6px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .bento-card-desc {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      font-weight: 300;
+      position: relative;
+      z-index: 1;
+    }
+
+    .bento-icon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .bento-card:nth-child(1) .bento-card-inner {
+      background: linear-gradient(160deg, rgba(139,92,246,0.15) 0%, var(--surface-2) 60%);
+    }
+    .bento-card:nth-child(1) .bento-card-title { font-size: 28px; }
+
+    .bento-glow {
+      position: absolute;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.3;
+      top: 0; right: 0;
+    }
+
+    .bento-card:nth-child(1) .bento-glow { background: var(--accent); }
+    .bento-card:nth-child(3) .bento-glow { background: var(--green); }
+    .bento-card:nth-child(5) .bento-glow { background: #60a5fa; width: 80px; height: 80px; }
+
+    /* ── Download ── */
+    .download {
+      padding: 0 0 120px;
+    }
+
+    .dl-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 56px;
+    }
+
+    .dl-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 6px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 900ms cubic-bezier(0.32,0.72,0,1);
+    }
+
+    .dl-card.visible { opacity: 1; transform: translateY(0); }
+
+    .dl-card-inner {
+      background: var(--surface-2);
+      border-radius: 15px;
+      padding: 28px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .dl-os-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .dl-os-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .dl-os-sub {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    .dl-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 14px 10px 16px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border-bright);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      transition: all 700ms cubic-bezier(0.32,0.72,0,1);
+    }
+
+    .dl-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+
+    .dl-btn-arrow {
+      width: 20px; height: 20px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      transition: transform 700ms cubic-bezier(0.32,0.72,0,1);
+    }
+
+    .dl-btn:hover .dl-btn-arrow { transform: translate(2px, -1px); }
+
+    /* ── Footer ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 900px;
+      margin: 0 auto;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .footer-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--muted);
+      display: flex; align-items: center; gap: 6px;
+      text-decoration: none;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      font-size: 13px;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 400ms ease;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      nav { width: calc(100% - 32px); top: 16px; }
+
+      .hero { padding: 120px 20px 60px; }
+
+      .comparison-grid { grid-template-columns: 1fr; }
+
+      .bento { grid-template-columns: 1fr; grid-auto-rows: auto; }
+      .bento-card { grid-column: span 1 !important; grid-row: span 1 !important; }
+      .bento-card-inner { padding: 20px; min-height: 140px; }
+
+      .dl-grid { grid-template-columns: 1fr; }
+
+      footer { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="glow-orb glow-orb-1"></div>
+  <div class="glow-orb glow-orb-2"></div>
+
+  <!-- Nav -->
+  <nav>
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        <div class="nav-logo-dot"></div>
+        Pictune
+      </a>
+      <a href="https://github.com/skisolive/Pictune/releases" class="nav-cta" target="_blank" rel="noopener">
+        Download
+        <div class="btn-icon" style="width:24px;height:24px;font-size:11px;">↓</div>
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="eyebrow">
+      <div class="eyebrow-dot"></div>
+      Free & Open Source
+    </div>
+    <h1>Your music deserves<br>a <em>better</em> video.</h1>
+    <p class="hero-sub">Turn your cover art and audio into a YouTube-ready video. No watermarks. No uploads. No subscription — ever.</p>
+    <div class="hero-actions">
+      <a href="https://github.com/skisolive/Pictune/releases" class="btn-primary" target="_blank" rel="noopener">
+        Download Free
+        <div class="btn-icon">↓</div>
+      </a>
+      <a href="https://github.com/skisolive/Pictune" class="btn-ghost" target="_blank" rel="noopener">
+        View on GitHub ↗
+      </a>
+    </div>
+
+    <!-- App mockup -->
+    <div class="mockup-wrap">
+      <div class="mockup-outer">
+        <div class="mockup-inner">
+          <div class="mockup-topbar">
+            <div class="mockup-brand">
+              <div class="mockup-brand-dot"></div>
+              Pictune
+            </div>
+            <div style="width:20px;height:20px;background:rgba(255,255,255,0.04);border-radius:5px;border:1px solid var(--border);"></div>
+          </div>
+
+          <div class="mockup-section">
+            <div class="mockup-label">Image</div>
+            <div class="mockup-image-row">
+              <div class="mockup-thumb"></div>
+              <div class="mockup-filename">midnight_cover.png</div>
+            </div>
+          </div>
+
+          <div class="mockup-section">
+            <div class="mockup-label">Audio (2) · 5:42</div>
+            <div class="mockup-audio-row">
+              <div class="mockup-audio-name">intro.wav</div>
+              <div class="mockup-duration">1:18</div>
+            </div>
+            <div class="mockup-audio-row">
+              <div class="mockup-audio-name">midnight_mix.wav</div>
+              <div class="mockup-duration">4:24</div>
+            </div>
+          </div>
+
+          <div class="mockup-section">
+            <div class="mockup-bar-top">
+              <span>Rendering</span>
+              <span>~45s left</span>
+            </div>
+            <div class="mockup-bar">
+              <div class="mockup-bar-fill"></div>
+            </div>
+            <div class="mockup-render-btn">Cancel</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section class="comparison">
+    <div class="container">
+      <div class="section-eyebrow">vs TunesToTube</div>
+      <h2>They charge you<br>to remove their<br><em style="font-style:normal;color:var(--red);">watermark.</em></h2>
+      <p class="section-sub">TunesToTube puts their logo on every video unless you pay $5–9 a month. Pictune has no watermark. Not on the free tier. Not ever.</p>
+
+      <div class="comparison-grid">
+        <div class="comp-card theirs">
+          <div class="comp-card-inner">
+            <div class="comp-label">Them</div>
+            <div class="comp-name">TunesToTube</div>
+            <div class="comp-row">
+              <div class="comp-icon">✕</div>
+              <div class="comp-text"><strong>Watermark on every video</strong> unless you pay monthly</div>
+            </div>
+            <div class="comp-row">
+              <div class="comp-icon">✕</div>
+              <div class="comp-text"><strong>$5–9/month</strong> to remove their branding from your video</div>
+            </div>
+            <div class="comp-row">
+              <div class="comp-icon">✕</div>
+              <div class="comp-text"><strong>Your files are uploaded</strong> to their servers</div>
+            </div>
+            <div class="comp-row">
+              <div class="comp-icon">✕</div>
+              <div class="comp-text"><strong>Requires internet</strong> to work</div>
+            </div>
+          </div>
+        </div>
+        <div class="comp-card ours">
+          <div class="comp-card-inner">
+            <div class="comp-label">Us</div>
+            <div class="comp-name">Pictune</div>
+            <div class="comp-row">
+              <div class="comp-icon">✓</div>
+              <div class="comp-text"><strong>No watermark</strong> — not now, not ever</div>
+            </div>
+            <div class="comp-row">
+              <div class="comp-icon">✓</div>
+              <div class="comp-text"><strong>Free forever</strong> — no subscription, no tiers</div>
+            </div>
+            <div class="comp-row">
+              <div class="comp-icon">✓</div>
+              <div class="comp-text"><strong>100% offline</strong> — your files never leave your machine</div>
+            </div>
+            <div class="comp-row">
+              <div class="comp-icon">✓</div>
+              <div class="comp-text"><strong>Works without internet</strong> — render anywhere</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features bento -->
+  <section class="features">
+    <div class="container">
+      <div class="section-eyebrow">Features</div>
+      <h2>Everything you need.<br>Nothing you don't.</h2>
+
+      <div class="bento">
+
+        <div class="bento-card">
+          <div class="bento-card-inner">
+            <div class="bento-glow"></div>
+            <div class="bento-card-title">100% Offline</div>
+            <div class="bento-card-desc">Pictune runs entirely on your machine. No account, no internet, no cloud. Your music stays yours.</div>
+          </div>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-card-inner">
+            <div class="bento-icon">🎵</div>
+            <div class="bento-card-title">Multiple Audio Files</div>
+            <div class="bento-card-desc">Add and reorder multiple tracks. They're stitched together into one seamless video.</div>
+          </div>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-card-inner">
+            <div class="bento-glow"></div>
+            <div class="bento-icon">⏱</div>
+            <div class="bento-card-title">Duration Preview</div>
+            <div class="bento-card-desc">See total runtime before you render.</div>
+          </div>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-card-inner">
+            <div class="bento-icon">📊</div>
+            <div class="bento-card-title">Live ETA</div>
+            <div class="bento-card-desc">Real-time progress and time remaining while rendering.</div>
+          </div>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-card-inner">
+            <div class="bento-glow"></div>
+            <div class="bento-icon">🖥</div>
+            <div class="bento-card-title">720p & 1080p</div>
+            <div class="bento-card-desc">Choose your output resolution. AAC 320kbps audio — optimized for YouTube.</div>
+          </div>
+        </div>
+
+        <div class="bento-card">
+          <div class="bento-card-inner">
+            <div class="bento-icon">📁</div>
+            <div class="bento-card-title">Open When Done</div>
+            <div class="bento-card-desc">One click to reveal your finished video in your file manager. No hunting through folders.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Download -->
+  <section class="download">
+    <div class="container">
+      <div class="section-eyebrow">Download</div>
+      <h2>Pick your platform.</h2>
+      <p class="section-sub">Windows, macOS, and Linux. All builds are free. Always.</p>
+
+      <div class="dl-grid">
+        <div class="dl-card">
+          <div class="dl-card-inner">
+            <div class="dl-os-icon">🪟</div>
+            <div>
+              <div class="dl-os-name">Windows</div>
+              <div class="dl-os-sub">Windows 10 or later, x64</div>
+            </div>
+            <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
+              Download .exe
+              <div class="dl-btn-arrow">↗</div>
+            </a>
+            <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
+              Download .msi
+              <div class="dl-btn-arrow">↗</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="dl-card">
+          <div class="dl-card-inner">
+            <div class="dl-os-icon">🍎</div>
+            <div>
+              <div class="dl-os-name">macOS</div>
+              <div class="dl-os-sub">Universal — Intel & Apple Silicon</div>
+            </div>
+            <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
+              Download .dmg
+              <div class="dl-btn-arrow">↗</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="dl-card">
+          <div class="dl-card-inner">
+            <div class="dl-os-icon">🐧</div>
+            <div>
+              <div class="dl-os-name">Linux</div>
+              <div class="dl-os-sub">x64 — AppImage or .deb</div>
+            </div>
+            <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
+              Download .AppImage
+              <div class="dl-btn-arrow">↗</div>
+            </a>
+            <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
+              Download .deb
+              <div class="dl-btn-arrow">↗</div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <a href="#" class="footer-logo">
+      <div class="nav-logo-dot"></div>
+      Pictune
+    </a>
+    <div class="footer-links">
+      <a href="https://github.com/skisolive/Pictune" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://github.com/skisolive/Pictune/releases" target="_blank" rel="noopener">Releases</a>
+      <a href="https://github.com/skisolive/Pictune/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
+    </div>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          const delay = entry.target.dataset.delay || 0;
+          setTimeout(() => entry.target.classList.add('visible'), delay);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.comp-card, .bento-card, .dl-card').forEach((el, i) => {
+      el.dataset.delay = i * 80;
+      observer.observe(el);
+    });
+  </script>
+</body>
+</html>
