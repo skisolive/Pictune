@@ -1,13 +1,13 @@
 <div align="center">
   <img src="src-tauri/icons/128x128@2x.png" width="96" alt="Pictune" />
   <h1>Pictune</h1>
+
+  <p><strong>Turn your cover art and audio into a YouTube-ready video — free, offline, no watermark.</strong></p>
+
+  ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
+  ![License](https://img.shields.io/badge/license-MIT-green)
+  ![Free](https://img.shields.io/badge/price-free-brightgreen)
 </div>
-
-**Turn your cover art and audio into a YouTube-ready video — free, offline, no watermark.**
-
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
-![Free](https://img.shields.io/badge/price-free-brightgreen)
 
 ---
 
