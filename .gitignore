@@ -1,0 +1,34 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# ffmpeg binaries — downloaded by CI, not committed
+src-tauri/bin/ffmpeg*
+src-tauri/bin/ffprobe*
+
+# Tauri generated schemas (auto-generated, not needed in repo)
+src-tauri/gen/
+
+# App icon source (only the processed icons in src-tauri/icons/ are needed)
+app-icon.png
+
+# Editor directories and files
+.vscode/
+.idea
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

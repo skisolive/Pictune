@@ -1,0 +1,114 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: ""
+          - platform: macos-latest
+            args: "--target universal-apple-darwin"
+          - platform: ubuntu-22.04
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1.0-dev \
+            build-essential \
+            curl wget file xz-utils \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - name: Download ffmpeg (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $url = "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+          Invoke-WebRequest $url -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip -DestinationPath ffmpeg_tmp
+          $bin = Get-ChildItem -Recurse -Filter "ffmpeg.exe" ffmpeg_tmp | Select-Object -First 1
+          Copy-Item $bin.FullName src-tauri/bin/ffmpeg-windows-x64.exe
+          $bin2 = Get-ChildItem -Recurse -Filter "ffprobe.exe" ffmpeg_tmp | Select-Object -First 1
+          Copy-Item $bin2.FullName src-tauri/bin/ffprobe-windows-x64.exe
+
+      - name: Download ffmpeg (macOS)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          curl -L "https://evermeet.cx/ffmpeg/getrelease/ffmpeg/zip" -o ffmpeg.zip
+          curl -L "https://evermeet.cx/ffmpeg/getrelease/ffprobe/zip" -o ffprobe.zip
+          unzip -o ffmpeg.zip -d src-tauri/bin
+          unzip -o ffprobe.zip -d src-tauri/bin
+          cp src-tauri/bin/ffmpeg src-tauri/bin/ffmpeg-macos-arm64
+          cp src-tauri/bin/ffmpeg src-tauri/bin/ffmpeg-macos-x64
+          cp src-tauri/bin/ffprobe src-tauri/bin/ffprobe-macos-arm64
+          cp src-tauri/bin/ffprobe src-tauri/bin/ffprobe-macos-x64
+          rm src-tauri/bin/ffmpeg src-tauri/bin/ffprobe
+          chmod +x src-tauri/bin/ffmpeg-macos-arm64 src-tauri/bin/ffprobe-macos-arm64
+          chmod +x src-tauri/bin/ffmpeg-macos-x64 src-tauri/bin/ffprobe-macos-x64
+
+      - name: Download ffmpeg (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          curl -L "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz" -o ffmpeg.tar.xz
+          tar -xf ffmpeg.tar.xz
+          cp ffmpeg-master-latest-linux64-gpl/bin/ffmpeg src-tauri/bin/ffmpeg-linux-x64
+          cp ffmpeg-master-latest-linux64-gpl/bin/ffprobe src-tauri/bin/ffprobe-linux-x64
+          chmod +x src-tauri/bin/ffmpeg-linux-x64 src-tauri/bin/ffprobe-linux-x64
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build and publish release
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: "Pictune ${{ github.ref_name }}"
+          releaseBody: |
+            ## Download
+
+            | Platform | File |
+            |---|---|
+            | Windows | `Pictune_x64-setup.exe` (installer) or `.msi` |
+            | macOS | `Pictune.dmg` (universal — Intel + Apple Silicon) |
+            | Linux | `Pictune.AppImage` or `.deb` |
+
+            See [README](https://github.com/${{ github.repository }}/blob/main/README.md) for build instructions.
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
