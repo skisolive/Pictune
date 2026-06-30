@@ -1,34 +1,48 @@
 # Pictune
 
-Turn your cover art and audio into a YouTube-ready video — entirely on your machine, no uploads, no accounts.
+**Turn your cover art and audio into a YouTube-ready video — free, offline, no watermark.**
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
+![Free](https://img.shields.io/badge/price-free-brightgreen)
 
-## Why Pictune
+---
 
-Sites like TunesToTube do this in the browser — which means your audio and artwork pass through someone else's servers. Pictune runs fully offline. Your files never leave your computer.
+## Why not TunesToTube?
+
+| | TunesToTube | Pictune |
+|---|---|---|
+| Watermark on video | ✅ free tier | ❌ never |
+| Paid plan to remove watermark | $5–9/mo | free forever |
+| Your files uploaded to a server | yes | **no — 100% offline** |
+| Works without internet | no | **yes** |
+| Open source | no | **yes** |
+
+---
 
 ## Features
 
-- Drag and drop your cover image and audio files
-- Combine multiple audio files in any order
-- 720p and 1080p output with contain or cover fit
-- AAC 320kbps audio — ready for YouTube
-- Duration preview before you render
-- ETA during rendering
-- Open output directly in your file manager when done
-- No internet connection required
+- 🎨 Drop your cover image (JPG, PNG, WEBP)
+- 🎵 Add one or more audio files (MP3, WAV) in any order
+- ⏱️ See total duration before you render
+- 📊 Live progress and ETA while rendering
+- 📁 Open output directly in your file manager when done
+- 🖥️ 720p and 1080p output
+- 🔒 Your files never leave your machine
+
+---
 
 ## Download
 
-Grab the latest build for your platform from [Releases](../../releases).
+Grab the latest installer from [**Releases**](../../releases).
 
 | Platform | File |
 |---|---|
 | Windows | `Pictune_x64-setup.exe` or `.msi` |
-| macOS | `Pictune.dmg` (universal — runs on Intel and Apple Silicon) |
+| macOS | `Pictune.dmg` — universal, runs on Intel and Apple Silicon |
 | Linux | `Pictune.AppImage` or `.deb` |
+
+---
 
 ## Building from source
 
@@ -52,6 +66,8 @@ ffmpeg is downloaded automatically by CI. For local builds, place static ffmpeg 
 
 Get static builds from [BtbN/FFmpeg-Builds](https://github.com/BtbN/FFmpeg-Builds/releases) (Windows/Linux) or [evermeet.cx](https://evermeet.cx/ffmpeg/) (macOS).
 
+---
+
 ## License
 
-MIT
+MIT — free to use, modify, and distribute.
