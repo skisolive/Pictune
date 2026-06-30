@@ -5,7 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pictune — Free YouTube Video Maker</title>
   <meta name="description" content="Turn your cover art and audio into a YouTube-ready video. 100% offline, no watermark, no subscription. Free forever." />
-  <link rel="icon" href="../src-tauri/icons/32x32.png" />
+  <meta name="theme-color" content="#0a0908" />
+  <link rel="icon" href="assets/favicon-32.png" />
+  <link rel="apple-touch-icon" href="assets/icon-256.png" />
+
+  <!-- Social / Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Pictune — Free YouTube Video Maker, No Watermark" />
+  <meta property="og:description" content="Turn your cover art and audio into a YouTube-ready video. 100% offline, no watermark, no subscription — free forever." />
+  <meta property="og:image" content="https://skisolive.github.io/Pictune/assets/icon-256.png" />
+  <meta property="og:url" content="https://skisolive.github.io/Pictune/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Pictune — Free YouTube Video Maker, No Watermark" />
+  <meta name="twitter:description" content="Cover art + audio to video. Offline, no watermark, free forever." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
@@ -13,21 +25,50 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --black: #050505;
-      --surface: #0d0d0f;
-      --surface-2: #131316;
-      --border: rgba(255,255,255,0.07);
-      --border-bright: rgba(255,255,255,0.12);
-      --text: #f0f0f2;
-      --muted: #6b6b78;
-      --subtle: #2a2a32;
-      --accent: #a78bfa;
-      --accent-dim: rgba(167,139,250,0.12);
-      --green: #34d399;
-      --red: #f87171;
+      /* Matches the app: zinc monochrome, white accent, red for danger only */
+      --black: #09090b;       /* app --bg-app, zinc 950 */
+      --surface: #18181b;     /* zinc 900 */
+      --surface-2: #1f1f23;
+      --border: rgba(255,255,255,0.08);
+      --border-bright: rgba(255,255,255,0.14);
+      --text: #f4f4f5;        /* zinc 100, app --text-main */
+      --muted: #a1a1aa;       /* zinc 400, app --text-muted */
+      --subtle: #3f3f46;      /* zinc 700 */
+      /* Monochrome white accent — same as the app */
+      --accent: #ffffff;
+      --accent-soft: #a1a1aa;
+      --accent-dim: rgba(255,255,255,0.10);
+      /* Red is the app's only chromatic color (danger). Used for the "theirs" negatives. */
+      --danger: #ef4444;
+      --shadow: rgba(0,0,0,0.6);
     }
 
     html { scroll-behavior: smooth; }
+
+    /* Keyboard focus visibility (accessibility) */
+    a:focus-visible, button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 6px;
+    }
+
+    /* Skip to content */
+    .skip-link {
+      position: absolute;
+      left: 50%;
+      top: -60px;
+      transform: translateX(-50%);
+      z-index: 200;
+      background: var(--text);
+      color: var(--black);
+      padding: 10px 18px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: top 300ms cubic-bezier(0.32,0.72,0,1);
+    }
+    .skip-link:focus-visible { top: 16px; outline-offset: 2px; }
 
     body {
       background: var(--black);
@@ -62,12 +103,24 @@
     .glow-orb-1 {
       width: 600px; height: 600px;
       top: -200px; left: -100px;
-      background: radial-gradient(circle, rgba(139,92,246,0.15) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+      animation: drift1 22s ease-in-out infinite;
     }
     .glow-orb-2 {
       width: 500px; height: 500px;
       top: 40%; right: -150px;
-      background: radial-gradient(circle, rgba(52,211,153,0.08) 0%, transparent 70%);
+      background: radial-gradient(circle, rgba(255,255,255,0.035) 0%, transparent 70%);
+      animation: drift2 28s ease-in-out infinite;
+    }
+
+    @keyframes drift1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(80px, 60px) scale(1.1); }
+      66% { transform: translate(-40px, 30px) scale(0.95); }
+    }
+    @keyframes drift2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(-70px, -50px) scale(1.15); }
     }
 
     /* ── Nav ── */
@@ -106,12 +159,13 @@
       gap: 8px;
     }
 
-    .nav-logo-dot {
-      width: 8px; height: 8px;
-      background: var(--accent);
-      border-radius: 50%;
-      box-shadow: 0 0 8px var(--accent);
+    .logo-mark {
+      display: block;
+      border-radius: 6px;
+      flex-shrink: 0;
     }
+    .nav-logo .logo-mark { width: 22px; height: 22px; }
+    .footer-logo .logo-mark { width: 18px; height: 18px; opacity: 0.8; }
 
     .nav-cta {
       display: inline-flex;
@@ -165,7 +219,8 @@
       animation: fadeUp 800ms 100ms cubic-bezier(0.32,0.72,0,1) forwards;
     }
 
-    .eyebrow-dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 6px var(--accent); }
+    .eyebrow-dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 6px rgba(255,255,255,0.5); }
+
 
     h1 {
       font-family: 'Syne', sans-serif;
@@ -176,6 +231,7 @@
       color: var(--text);
       max-width: 800px;
       margin-bottom: 24px;
+      text-wrap: balance;
       opacity: 0;
       transform: translateY(24px);
       animation: fadeUp 900ms 200ms cubic-bezier(0.32,0.72,0,1) forwards;
@@ -183,7 +239,7 @@
 
     h1 em {
       font-style: normal;
-      background: linear-gradient(135deg, #a78bfa 0%, #34d399 100%);
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
@@ -216,7 +272,8 @@
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      padding: 14px 20px 14px 24px;
+      height: 52px;
+      padding: 0 8px 0 24px;
       background: var(--text);
       color: var(--black);
       font-family: 'DM Sans', sans-serif;
@@ -233,12 +290,13 @@
     .btn-primary:active { transform: scale(0.97); }
 
     .btn-icon {
-      width: 28px; height: 28px;
+      width: 36px; height: 36px;
       background: rgba(0,0,0,0.1);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
       transition: transform 700ms cubic-bezier(0.32,0.72,0,1);
-      font-size: 13px;
+      font-size: 14px;
+      flex-shrink: 0;
     }
 
     .btn-primary:hover .btn-icon { transform: translate(2px, -1px) scale(1.1); }
@@ -247,7 +305,8 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 14px 24px;
+      height: 52px;
+      padding: 0 26px;
       background: transparent;
       color: var(--muted);
       font-family: 'DM Sans', sans-serif;
@@ -261,6 +320,52 @@
     }
 
     .btn-ghost:hover { color: var(--text); border-color: var(--border-bright); background: rgba(255,255,255,0.03); }
+
+    /* ── Hero stats ── */
+    .hero-stats {
+      display: flex;
+      align-items: stretch;
+      gap: 0;
+      margin-top: 56px;
+      opacity: 0;
+      transform: translateY(24px);
+      animation: fadeUp 900ms 550ms cubic-bezier(0.32,0.72,0,1) forwards;
+    }
+
+    .hero-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 0 28px;
+    }
+
+    .hero-stat + .hero-stat { border-left: 1px solid var(--border); }
+
+    .hero-stat-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 30px;
+      letter-spacing: -0.03em;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .hero-stat-num em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-soft) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      font-weight: 500;
+    }
 
     /* ── App mockup ── */
     .mockup-wrap {
@@ -278,7 +383,7 @@
       border: 1px solid var(--border-bright);
       border-radius: 28px;
       padding: 6px;
-      box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 40px 80px rgba(0,0,0,0.6);
+      box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 40px 80px var(--shadow);
     }
 
     .mockup-inner {
@@ -330,7 +435,7 @@
 
     .mockup-thumb {
       width: 36px; height: 36px;
-      background: linear-gradient(135deg, #4c1d95, #1d4ed8);
+      background: linear-gradient(135deg, #52525b, #18181b);
       border-radius: 6px;
       flex-shrink: 0;
     }
@@ -353,7 +458,7 @@
 
     .mockup-audio-name {
       font-size: 11px;
-      color: rgba(240,240,242,0.7);
+      color: rgba(245,241,234,0.72);
     }
 
     .mockup-duration {
@@ -407,6 +512,42 @@
       margin-top: 10px;
     }
 
+    /* ── Marquee ── */
+    .marquee {
+      position: relative;
+      z-index: 1;
+      overflow: hidden;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 22px 0;
+      margin: 40px 0 0;
+      -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+      mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+    }
+
+    .marquee-track {
+      display: flex;
+      align-items: center;
+      gap: 30px;
+      width: max-content;
+      animation: marquee 32s linear infinite;
+    }
+
+    .marquee-item {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .marquee-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--subtle); flex-shrink: 0; }
+
+    @keyframes marquee {
+      to { transform: translateX(-50%); }
+    }
+
     /* ── Section shared ── */
     section {
       position: relative;
@@ -443,6 +584,7 @@
       letter-spacing: -0.03em;
       color: var(--text);
       margin-bottom: 16px;
+      text-wrap: balance;
     }
 
     .section-sub {
@@ -451,6 +593,7 @@
       font-weight: 300;
       max-width: 440px;
       line-height: 1.7;
+      text-wrap: pretty;
     }
 
     /* ── Comparison ── */
@@ -484,8 +627,8 @@
       height: 100%;
     }
 
-    .comp-card.theirs .comp-card-inner { background: rgba(248,113,113,0.05); }
-    .comp-card.ours .comp-card-inner { background: rgba(52,211,153,0.05); border: 1px solid rgba(52,211,153,0.1); }
+    .comp-card.theirs .comp-card-inner { background: rgba(239,68,68,0.05); }
+    .comp-card.ours .comp-card-inner { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.10); }
 
     .comp-label {
       font-size: 10px;
@@ -495,8 +638,8 @@
       margin-bottom: 20px;
     }
 
-    .comp-card.theirs .comp-label { color: var(--red); }
-    .comp-card.ours .comp-label { color: var(--green); }
+    .comp-card.theirs .comp-label { color: var(--danger); }
+    .comp-card.ours .comp-label { color: var(--text); }
 
     .comp-name {
       font-family: 'Syne', sans-serif;
@@ -517,11 +660,12 @@
 
     .comp-row:last-child { border-bottom: none; }
 
-    .comp-icon { flex-shrink: 0; margin-top: 1px; font-size: 13px; }
-    .comp-card.theirs .comp-icon { color: var(--red); }
-    .comp-card.ours .comp-icon { color: var(--green); }
+    .comp-icon { flex-shrink: 0; margin-top: 2px; width: 15px; height: 15px; display: flex; }
+    .comp-icon svg { display: block; }
+    .comp-card.theirs .comp-icon { color: var(--danger); }
+    .comp-card.ours .comp-icon { color: var(--text); }
 
-    .comp-text { color: rgba(240,240,242,0.7); line-height: 1.5; }
+    .comp-text { color: rgba(245,241,234,0.72); line-height: 1.5; }
     .comp-text strong { color: var(--text); font-weight: 500; }
 
     /* ── Bento ── */
@@ -603,11 +747,13 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      color: var(--accent);
     }
 
+    .bento-icon svg, .dl-os-icon svg { display: block; }
+
     .bento-card:nth-child(1) .bento-card-inner {
-      background: linear-gradient(160deg, rgba(139,92,246,0.15) 0%, var(--surface-2) 60%);
+      background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, var(--surface-2) 60%);
     }
     .bento-card:nth-child(1) .bento-card-title { font-size: 28px; }
 
@@ -621,8 +767,8 @@
     }
 
     .bento-card:nth-child(1) .bento-glow { background: var(--accent); }
-    .bento-card:nth-child(3) .bento-glow { background: var(--green); }
-    .bento-card:nth-child(5) .bento-glow { background: #60a5fa; width: 80px; height: 80px; }
+    .bento-card:nth-child(3) .bento-glow { background: var(--accent); opacity: 0.22; }
+    .bento-card:nth-child(5) .bento-glow { background: var(--accent-soft); width: 80px; height: 80px; opacity: 0.18; }
 
     /* ── Download ── */
     .download {
@@ -656,13 +802,23 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
+      height: 100%;
     }
 
+    /* Fixed-size tile so all three OS marks share identical footprint */
     .dl-os-icon {
-      font-size: 28px;
-      line-height: 1;
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text);
     }
+    .dl-os-icon svg { display: block; }
 
     .dl-os-name {
       font-family: 'Syne', sans-serif;
@@ -676,29 +832,48 @@
       font-size: 12px;
       color: var(--muted);
       font-weight: 300;
+      margin-top: 2px;
+    }
+
+    /* Actions pinned to the bottom so buttons align across all cards */
+    .dl-actions {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding-top: 8px;
+    }
+
+    .dl-alt {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+      font-variant-numeric: tabular-nums;
     }
 
     .dl-btn {
       display: inline-flex;
       align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px 10px 16px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--border-bright);
+      justify-content: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: var(--text);
+      border: none;
       border-radius: 10px;
-      color: var(--text);
-      font-size: 12px;
-      font-weight: 500;
+      color: var(--black);
+      font-size: 13px;
+      font-weight: 600;
       text-decoration: none;
       cursor: pointer;
       transition: all 700ms cubic-bezier(0.32,0.72,0,1);
     }
 
-    .dl-btn:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+    .dl-btn:hover { background: #fff; transform: scale(1.02); }
+    .dl-btn:active { transform: scale(0.98); }
 
     .dl-btn-arrow {
       width: 20px; height: 20px;
-      background: rgba(255,255,255,0.08);
+      background: rgba(0,0,0,0.1);
       border-radius: 6px;
       display: flex; align-items: center; justify-content: center;
       font-size: 11px;
@@ -750,6 +925,16 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* Blur-in for scroll reveals */
+    .comp-card, .bento-card, .dl-card { filter: blur(6px); }
+    .comp-card.visible, .bento-card.visible, .dl-card.visible { filter: blur(0); }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation: none !important; transition: none !important; }
+      .eyebrow, h1, .hero-sub, .hero-actions, .hero-stats, .mockup-wrap { opacity: 1 !important; transform: none !important; }
+      .comp-card, .bento-card, .dl-card { filter: none; opacity: 1; transform: none; }
+    }
+
     /* ── Responsive ── */
     @media (max-width: 768px) {
       nav { width: calc(100% - 32px); top: 16px; }
@@ -764,11 +949,19 @@
 
       .dl-grid { grid-template-columns: 1fr; }
 
+      .hero-stats { margin-top: 44px; }
+      .hero-stat { padding: 0 18px; }
+      .hero-stat-num { font-size: 24px; }
+
+      .marquee-item { font-size: 16px; }
+
       footer { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
 <body>
+
+  <a href="#download" class="skip-link">Skip to download</a>
 
   <div class="glow-orb glow-orb-1"></div>
   <div class="glow-orb glow-orb-2"></div>
@@ -777,7 +970,7 @@
   <nav>
     <div class="nav-inner">
       <a href="#" class="nav-logo">
-        <div class="nav-logo-dot"></div>
+        <img class="logo-mark" src="assets/icon-256.png" alt="Pictune logo" />
         Pictune
       </a>
       <a href="https://github.com/skisolive/Pictune/releases" class="nav-cta" target="_blank" rel="noopener">
@@ -786,6 +979,8 @@
       </a>
     </div>
   </nav>
+
+  <main>
 
   <!-- Hero -->
   <section class="hero">
@@ -805,16 +1000,31 @@
       </a>
     </div>
 
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="hero-stat-num"><em>$0</em></div>
+        <div class="hero-stat-label">Forever</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">0</div>
+        <div class="hero-stat-label">Watermarks</div>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-num">3</div>
+        <div class="hero-stat-label">Platforms</div>
+      </div>
+    </div>
+
     <!-- App mockup -->
     <div class="mockup-wrap">
       <div class="mockup-outer">
         <div class="mockup-inner">
           <div class="mockup-topbar">
             <div class="mockup-brand">
-              <div class="mockup-brand-dot"></div>
+              <img src="assets/icon-256.png" alt="" style="width:16px;height:16px;border-radius:4px;display:block;" />
               Pictune
             </div>
-            <div style="width:20px;height:20px;background:rgba(255,255,255,0.04);border-radius:5px;border:1px solid var(--border);"></div>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </div>
 
           <div class="mockup-section">
@@ -852,11 +1062,30 @@
     </div>
   </section>
 
+  <!-- Marquee -->
+  <div class="marquee">
+    <div class="marquee-track">
+      <div class="marquee-item">No Watermark</div><div class="marquee-dot"></div>
+      <div class="marquee-item">Free Forever</div><div class="marquee-dot"></div>
+      <div class="marquee-item">100% Offline</div><div class="marquee-dot"></div>
+      <div class="marquee-item">Open Source</div><div class="marquee-dot"></div>
+      <div class="marquee-item">No Sign-Up</div><div class="marquee-dot"></div>
+      <div class="marquee-item">Your Files Stay Yours</div><div class="marquee-dot"></div>
+      <!-- duplicate for seamless loop -->
+      <div class="marquee-item">No Watermark</div><div class="marquee-dot"></div>
+      <div class="marquee-item">Free Forever</div><div class="marquee-dot"></div>
+      <div class="marquee-item">100% Offline</div><div class="marquee-dot"></div>
+      <div class="marquee-item">Open Source</div><div class="marquee-dot"></div>
+      <div class="marquee-item">No Sign-Up</div><div class="marquee-dot"></div>
+      <div class="marquee-item">Your Files Stay Yours</div><div class="marquee-dot"></div>
+    </div>
+  </div>
+
   <!-- Comparison -->
   <section class="comparison">
     <div class="container">
       <div class="section-eyebrow">vs TunesToTube</div>
-      <h2>They charge you<br>to remove their<br><em style="font-style:normal;color:var(--red);">watermark.</em></h2>
+      <h2>They charge you<br>to remove their<br><em style="font-style:normal;color:var(--danger);">watermark.</em></h2>
       <p class="section-sub">TunesToTube puts their logo on every video unless you pay $5–9 a month. Pictune has no watermark. Not on the free tier. Not ever.</p>
 
       <div class="comparison-grid">
@@ -865,19 +1094,19 @@
             <div class="comp-label">Them</div>
             <div class="comp-name">TunesToTube</div>
             <div class="comp-row">
-              <div class="comp-icon">✕</div>
+              <div class="comp-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></div>
               <div class="comp-text"><strong>Watermark on every video</strong> unless you pay monthly</div>
             </div>
             <div class="comp-row">
-              <div class="comp-icon">✕</div>
-              <div class="comp-text"><strong>$5–9/month</strong> to remove their branding from your video</div>
+              <div class="comp-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></div>
+              <div class="comp-text"><strong>$5–9/month</strong> just to remove it</div>
             </div>
             <div class="comp-row">
-              <div class="comp-icon">✕</div>
+              <div class="comp-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></div>
               <div class="comp-text"><strong>Your files are uploaded</strong> to their servers</div>
             </div>
             <div class="comp-row">
-              <div class="comp-icon">✕</div>
+              <div class="comp-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></div>
               <div class="comp-text"><strong>Requires internet</strong> to work</div>
             </div>
           </div>
@@ -887,19 +1116,19 @@
             <div class="comp-label">Us</div>
             <div class="comp-name">Pictune</div>
             <div class="comp-row">
-              <div class="comp-icon">✓</div>
+              <div class="comp-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 6.5"/></svg></div>
               <div class="comp-text"><strong>No watermark</strong> — not now, not ever</div>
             </div>
             <div class="comp-row">
-              <div class="comp-icon">✓</div>
+              <div class="comp-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 6.5"/></svg></div>
               <div class="comp-text"><strong>Free forever</strong> — no subscription, no tiers</div>
             </div>
             <div class="comp-row">
-              <div class="comp-icon">✓</div>
+              <div class="comp-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 6.5"/></svg></div>
               <div class="comp-text"><strong>100% offline</strong> — your files never leave your machine</div>
             </div>
             <div class="comp-row">
-              <div class="comp-icon">✓</div>
+              <div class="comp-icon"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 6.5"/></svg></div>
               <div class="comp-text"><strong>Works without internet</strong> — render anywhere</div>
             </div>
           </div>
@@ -926,7 +1155,7 @@
 
         <div class="bento-card">
           <div class="bento-card-inner">
-            <div class="bento-icon">🎵</div>
+            <div class="bento-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></div>
             <div class="bento-card-title">Multiple Audio Files</div>
             <div class="bento-card-desc">Add and reorder multiple tracks. They're stitched together into one seamless video.</div>
           </div>
@@ -935,7 +1164,7 @@
         <div class="bento-card">
           <div class="bento-card-inner">
             <div class="bento-glow"></div>
-            <div class="bento-icon">⏱</div>
+            <div class="bento-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg></div>
             <div class="bento-card-title">Duration Preview</div>
             <div class="bento-card-desc">See total runtime before you render.</div>
           </div>
@@ -943,7 +1172,7 @@
 
         <div class="bento-card">
           <div class="bento-card-inner">
-            <div class="bento-icon">📊</div>
+            <div class="bento-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h3l2.5 6 4-13L16 12h5"/></svg></div>
             <div class="bento-card-title">Live ETA</div>
             <div class="bento-card-desc">Real-time progress and time remaining while rendering.</div>
           </div>
@@ -952,7 +1181,7 @@
         <div class="bento-card">
           <div class="bento-card-inner">
             <div class="bento-glow"></div>
-            <div class="bento-icon">🖥</div>
+            <div class="bento-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg></div>
             <div class="bento-card-title">720p & 1080p</div>
             <div class="bento-card-desc">Choose your output resolution. AAC 320kbps audio — optimized for YouTube.</div>
           </div>
@@ -960,7 +1189,7 @@
 
         <div class="bento-card">
           <div class="bento-card-inner">
-            <div class="bento-icon">📁</div>
+            <div class="bento-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></div>
             <div class="bento-card-title">Open When Done</div>
             <div class="bento-card-desc">One click to reveal your finished video in your file manager. No hunting through folders.</div>
           </div>
@@ -971,7 +1200,7 @@
   </section>
 
   <!-- Download -->
-  <section class="download">
+  <section class="download" id="download">
     <div class="container">
       <div class="section-eyebrow">Download</div>
       <h2>Pick your platform.</h2>
@@ -980,61 +1209,64 @@
       <div class="dl-grid">
         <div class="dl-card">
           <div class="dl-card-inner">
-            <div class="dl-os-icon">🪟</div>
+            <div class="dl-os-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 5.5 10.5 4.4v7.1H3zM10.5 12.5v7.1L3 18.5v-6zM11.5 4.25 21 3v8.5h-9.5zM21 12.5V21l-9.5-1.3V12.5z"/></svg></div>
             <div>
               <div class="dl-os-name">Windows</div>
-              <div class="dl-os-sub">Windows 10 or later, x64</div>
+              <div class="dl-os-sub">Windows 10 or later · x64</div>
             </div>
-            <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
-              Download .exe
-              <div class="dl-btn-arrow">↗</div>
-            </a>
-            <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
-              Download .msi
-              <div class="dl-btn-arrow">↗</div>
-            </a>
+            <div class="dl-actions">
+              <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
+                Download
+                <div class="dl-btn-arrow">↗</div>
+              </a>
+              <div class="dl-alt">Installer (.exe) or .msi</div>
+            </div>
           </div>
         </div>
 
         <div class="dl-card">
           <div class="dl-card-inner">
-            <div class="dl-os-icon">🍎</div>
+            <div class="dl-os-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.8-3-.8c-1.5 0-3 .9-3.8 2.3-1.6 2.8-.4 7 1.2 9.3.8 1.1 1.7 2.4 2.9 2.3 1.2-.05 1.6-.75 3-.75s1.8.75 3 .73c1.2-.02 2-1.1 2.8-2.2.5-.8.9-1.6 1.1-2.2-2.4-.92-2.8-3.7-2.8-3.78zM14.2 5.8c.65-.8 1.1-1.9 1-3-.95.04-2.1.63-2.8 1.4-.6.7-1.1 1.8-1 2.9 1.05.08 2.1-.5 2.8-1.3z"/></svg></div>
             <div>
               <div class="dl-os-name">macOS</div>
-              <div class="dl-os-sub">Universal — Intel & Apple Silicon</div>
+              <div class="dl-os-sub">Intel & Apple Silicon</div>
             </div>
-            <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
-              Download .dmg
-              <div class="dl-btn-arrow">↗</div>
-            </a>
+            <div class="dl-actions">
+              <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
+                Download
+                <div class="dl-btn-arrow">↗</div>
+              </a>
+              <div class="dl-alt">Universal .dmg</div>
+            </div>
           </div>
         </div>
 
         <div class="dl-card">
           <div class="dl-card-inner">
-            <div class="dl-os-icon">🐧</div>
+            <div class="dl-os-icon"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.3c-2 0-3.4 1.6-3.4 3.9v2.9c0 1.1-.6 2-1.6 3.1-1.3 1.5-2.1 2.9-2.1 4.6 0 .9.4 1.6 1.2 2-.2.4-.3.8-.3 1.2 0 1.5 2.8 2.4 6.2 2.4s6.2-.9 6.2-2.4c0-.4-.1-.8-.3-1.2.8-.4 1.2-1.1 1.2-2 0-1.7-.8-3.1-2.1-4.6-1-1.1-1.6-2-1.6-3.1V6.2c0-2.3-1.4-3.9-3.4-3.9z"/><path fill="var(--surface-2)" d="M12 12.1c1.6 0 2.8 1.5 2.8 3.7 0 1.6-1.2 2.6-2.8 2.6s-2.8-1-2.8-2.6c0-2.2 1.2-3.7 2.8-3.7z"/><circle cx="10.7" cy="6.6" r=".75" fill="var(--surface-2)"/><circle cx="13.3" cy="6.6" r=".75" fill="var(--surface-2)"/></svg></div>
             <div>
               <div class="dl-os-name">Linux</div>
-              <div class="dl-os-sub">x64 — AppImage or .deb</div>
+              <div class="dl-os-sub">x64</div>
             </div>
-            <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
-              Download .AppImage
-              <div class="dl-btn-arrow">↗</div>
-            </a>
-            <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
-              Download .deb
-              <div class="dl-btn-arrow">↗</div>
-            </a>
+            <div class="dl-actions">
+              <a href="https://github.com/skisolive/Pictune/releases" class="dl-btn" target="_blank" rel="noopener">
+                Download
+                <div class="dl-btn-arrow">↗</div>
+              </a>
+              <div class="dl-alt">.AppImage or .deb</div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
+  </main>
+
   <!-- Footer -->
   <footer>
     <a href="#" class="footer-logo">
-      <div class="nav-logo-dot"></div>
+      <img class="logo-mark" src="assets/icon-256.png" alt="" />
       Pictune
     </a>
     <div class="footer-links">
@@ -1060,6 +1292,33 @@
       el.dataset.delay = i * 80;
       observer.observe(el);
     });
+
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Magnetic primary CTA — the button drifts toward the cursor
+    if (!reduceMotion && window.matchMedia('(pointer: fine)').matches) {
+      document.querySelectorAll('.btn-primary').forEach((btn) => {
+        btn.addEventListener('pointermove', (e) => {
+          const r = btn.getBoundingClientRect();
+          const x = (e.clientX - r.left - r.width / 2) * 0.25;
+          const y = (e.clientY - r.top - r.height / 2) * 0.4;
+          btn.style.transform = `translate(${x}px, ${y}px) scale(1.02)`;
+        });
+        btn.addEventListener('pointerleave', () => { btn.style.transform = ''; });
+      });
+
+      // Subtle parallax tilt on the hero mockup
+      const mockup = document.querySelector('.mockup-wrap');
+      if (mockup) {
+        const hero = document.querySelector('.hero');
+        hero.addEventListener('pointermove', (e) => {
+          const cx = (e.clientX / window.innerWidth - 0.5);
+          const cy = (e.clientY / window.innerHeight - 0.5);
+          mockup.style.transform = `perspective(1200px) rotateY(${cx * 5}deg) rotateX(${-cy * 5}deg) translateY(0)`;
+        });
+        hero.addEventListener('pointerleave', () => { mockup.style.transform = ''; });
+      }
+    }
   </script>
 </body>
 </html>
